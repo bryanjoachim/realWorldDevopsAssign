@@ -1,0 +1,70 @@
+---
+- name: Configure Web Server and Deploy App
+  hosts: web
+  become: true
+
+  tasks:
+    - name: Install dependencies
+      apt:
+        name: [nginx, curl]
+        state: present
+        update_cache: yes
+
+    - name: Install Node.js
+      shell: curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && apt install -y nodejs
+      args:
+        executable: /bin/bash
+
+    - name: Create app directory
+      file:
+        path: /var/www/app
+        state: directory
+
+    - name: Create sample Node.js app
+      copy:
+        dest: /var/www/app/app.js
+        content: |
+          const http = require('http');
+          const port = 3000;
+          const server = http.createServer((req, res) => {
+            res.statusCode = 200;
+            res.end('Hello from Ansible-deployed Node.js App!');
+          });
+          server.listen(port);
+
+    - name: Install PM2
+      npm:
+        name: pm2
+        global: yes
+
+    - name: Start app with PM2
+      shell: |
+        pm2 start /var/www/app/app.js
+        pm2 startup systemd
+        pm2 save
+        systemctl enable pm2-root
+      args:
+        executable: /bin/bash
+
+    - name: Configure Nginx to reverse proxy to Node.js
+      copy:
+        dest: /etc/nginx/sites-available/default
+        content: |
+          server {
+              listen 80 default_server;
+              listen [::]:80 default_server;
+
+              location / {
+                  proxy_pass http://localhost:3000;
+                  proxy_http_version 1.1;
+                  proxy_set_header Upgrade $http_upgrade;
+                  proxy_set_header Connection 'upgrade';
+                  proxy_set_header Host $host;
+                  proxy_cache_bypass $http_upgrade;
+              }
+          }
+
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
