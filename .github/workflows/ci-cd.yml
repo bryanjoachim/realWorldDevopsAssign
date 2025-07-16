@@ -29,25 +29,21 @@ jobs:
           terraform_version: 1.6.0
 
       - name: Terraform Init
-        working-directory: .
         run: terraform init
 
       - name: Terraform Apply
-        working-directory: .
         run: terraform apply -auto-approve
 
-
       - name: Get instance IP from Terraform
-        id: ip
+        id: get_ip
         run: |
           echo "IP=$(terraform output -raw instance_public_ip)" >> "$GITHUB_ENV"
 
-      - name: Generate Ansible Inventory
+      - name: Generate inventory.ini
         run: |
           echo "[web]" > ansible/inventory.ini
-          echo "$IP ansible_user=ubuntu ansible_ssh_private_key_file=.ansible_key" >> ansible/inventory.ini
+          echo "slave1 ansible_ssh_host=${{ env.IP }} ansible_user=ubuntu" >> ansible/inventory.ini
 
-      
       - name: Wait for Instance to Stabilize
         run: sleep 60
 
@@ -58,9 +54,8 @@ jobs:
           inventory: ansible/inventory.ini
           key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Wait for 5 minutes before destroy
-        run: sleep 300
+      - name: Wait for 3 minutes before destroy
+        run: sleep 180
 
       - name: Destroy Terraform
-        working-directory: .
         run: terraform destroy -auto-approve
