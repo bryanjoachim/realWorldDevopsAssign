@@ -7,7 +7,7 @@ variable "ami_id" {
 }
 
 variable "key_name" {
-  default = "dynamo.pem"
+  default = "dynamo"
 }
 
 variable "db_username" {
