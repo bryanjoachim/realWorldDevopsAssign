@@ -120,7 +120,7 @@ resource "aws_db_instance" "db" {
 }
 
 resource "aws_db_subnet_group" "main" {
-  name       = "main-db-subnet-group"
+  name       = "main-db-subnet-group-${random_id.db.hex}"
   subnet_ids = [aws_subnet.public_a.id, aws_subnet.public_b.id]
 
   tags = {
