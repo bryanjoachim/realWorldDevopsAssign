@@ -45,22 +45,19 @@ jobs:
 
       - name: Prepare Ansible Inventory
         run: |
-          # Ensure the ansible directory exists
+          # Your script commands here...
           mkdir -p ansible
-
-          # Get the EC2 public IP from the previous Terraform output
-          # Make sure 'terraform_apply_output' is the ID of your Terraform Apply step
-          # And 'web_server_public_ip' is the name of your Terraform output
           EC2_PUBLIC_IP="${{ steps.terraform_apply_output.outputs.web_server_public_ip }}"
-
-          # Write the inventory file with the dynamic IP
+          if [ -z "$EC2_PUBLIC_IP" ]; then
+            echo "Error: EC2_PUBLIC_IP is empty. Check Terraform outputs and step ID."
+            exit 1
+          fi
           echo "[web]" > ansible/inventory.ini
           echo "$EC2_PUBLIC_IP ansible_user=ubuntu" >> ansible/inventory.ini
-
-          # Optional: Print the inventory content for debugging
           echo "Generated ansible/inventory.ini content:"
           cat ansible/inventory.ini
-          shell: bash # Ensure bash is used for variables
+          # THIS IS THE CORRECT INDENTATION FOR 'shell:'
+          shell: bash
 
       
 
