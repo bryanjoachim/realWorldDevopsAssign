@@ -55,12 +55,11 @@ jobs:
         with:
           playbook: ansible/deploy.yml
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          args: >
-            --inventory ansible/inventory.ini
+          inventory: ansible/inventory.ini
+          options: "-i ansible/inventory.ini"
 
-
-      - name: Wait for 3 minutes before destroy
-        run: sleep 180
+      - name: Wait for 2 minutes before destroy
+        run: sleep 120
 
       - name: Destroy Terraform
         run: terraform destroy -auto-approve
