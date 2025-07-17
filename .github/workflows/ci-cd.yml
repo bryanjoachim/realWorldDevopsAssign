@@ -26,12 +26,10 @@ jobs:
           terraform_version: 1.5.0 # Or your preferred version
 
       - name: Terraform Init
-        run: terraform -chdir=terraform init # Assuming your Terraform files are in a 'terraform' directory
+        run: terraform init # Assuming your Terraform files are in a 'terraform' directory
 
       - name: Terraform Apply # Task 1: Provisioning Infrastructure
-        run: terraform -chdir=terraform apply -auto-approve
-        # Output the EC2 IP for Ansible to use if not directly in inventory
-        id: terraform_apply_output
+        run: terraform apply -auto-approve
 
       - name: Setup SSH Agent for Ansible # Crucial for SSH authentication
         uses: webfactory/ssh-agent@v0.9.0
