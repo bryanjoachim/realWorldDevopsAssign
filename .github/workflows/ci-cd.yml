@@ -45,18 +45,21 @@ jobs:
 
       - name: Prepare Ansible Inventory
         run: |
-          # Your script commands here...
           mkdir -p ansible
-          EC2_PUBLIC_IP="${{ steps.terraform_apply_output.outputs.web_server_public_ip }}"
+
+          # CHANGE THIS LINE: Reference 'instance_public_ip' as defined in your outputs.tf
+          EC2_PUBLIC_IP="${{ steps.terraform_apply_output.outputs.instance_public_ip }}"
+
           if [ -z "$EC2_PUBLIC_IP" ]; then
             echo "Error: EC2_PUBLIC_IP is empty. Check Terraform outputs and step ID."
             exit 1
           fi
+
           echo "[web]" > ansible/inventory.ini
           echo "$EC2_PUBLIC_IP ansible_user=ubuntu" >> ansible/inventory.ini
+
           echo "Generated ansible/inventory.ini content:"
           cat ansible/inventory.ini
-          # THIS IS THE CORRECT INDENTATION FOR 'shell:'
           shell: bash
 
       
