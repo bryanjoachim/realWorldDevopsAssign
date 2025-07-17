@@ -42,7 +42,7 @@ jobs:
       - name: Generate inventory.ini
         run: |
           echo "[web]" > ansible/inventory.ini
-          echo "slave1 ansible_ssh_host=${{ env.IP }} ansible_user=ubuntu" >> ansible/inventory.ini
+          echo "$(terraform output -raw instance_public_ip) ansible_user=ubuntu" >> ansible/inventory.ini
 
       - name: Wait for Instance to Stabilize
         run: sleep 60
