@@ -54,8 +54,10 @@ jobs:
         uses: dawidd6/action-ansible-playbook@v2
         with:
           playbook: ansible/deploy.yml
-          inventory: ansible/inventory.ini
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          args: >
+            --inventory ansible/inventory.ini
+
 
       - name: Wait for 3 minutes before destroy
         run: sleep 180
