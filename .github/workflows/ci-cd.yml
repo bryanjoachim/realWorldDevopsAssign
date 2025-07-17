@@ -47,6 +47,9 @@ jobs:
       - name: Wait for Instance to Stabilize
         run: sleep 60
 
+      - name: Debug Inventory File
+        run: cat ansible/inventory.ini
+
       - name: Run Ansible Playbook
         uses: dawidd6/action-ansible-playbook@v2
         with:
