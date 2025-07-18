@@ -92,13 +92,7 @@ resource "aws_instance" "web" {
     vpc_security_group_ids = [aws_security_group.web_sg.id]
     key_name = var.key_name
 
-    provisioner "local-exec" {
-    command = <<EOT
-      sleep 60
-      ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook \
-        -i ansible/inventory.ini \
-        ansible/deploy.yml
-    EOT
+    
   }
 
     tags = {
