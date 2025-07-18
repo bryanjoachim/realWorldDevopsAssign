@@ -47,6 +47,24 @@ jobs:
           sudo apt-get install -y python3-pip
           pip3 install ansible
 
+
+      - name: Upgrade Python on EC2 (to >= 3.8)
+        run: |
+          ssh -o StrictHostKeyChecking=no -i dynamo.pem ec2-user@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
+          sudo yum groupinstall -y "Development Tools"
+          sudo yum install -y gcc openssl-devel bzip2-devel libffi-devel wget make
+
+          cd /usr/src
+          sudo wget https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tgz
+          sudo tar xzf Python-3.11.9.tgz
+          cd Python-3.11.9
+          sudo ./configure --enable-optimizations
+          sudo make altinstall
+
+          python3.11 --version
+          EOF
+      
+
       - name: Prepare Ansible Inventory
         run: |
           mkdir -p ansible
@@ -59,7 +77,7 @@ jobs:
           fi
 
           echo "[web]" > ansible/inventory.ini
-          echo "$EC2_PUBLIC_IP ansible_user=ec2-user" >> ansible/inventory.ini
+          echo "$EC2_PUBLIC_IP ansible_user=ec2-user ansible_python_interpreter=/usr/local/bin/python3.11" >> ansible/inventory.ini
 
           echo "Generated ansible/inventory.ini content:"
           cat ansible/inventory.ini
