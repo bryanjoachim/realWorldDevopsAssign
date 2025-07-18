@@ -31,6 +31,9 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve
 
+      - name: Wait for instance to be ready
+        run: sleep 60
+
       - name: Get instance public IP
         id: get_ip
         run: echo "instance_ip=$(terraform output -raw instance_public_ip)" >> $GITHUB_ENV
