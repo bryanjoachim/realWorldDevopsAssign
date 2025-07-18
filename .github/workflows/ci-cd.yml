@@ -43,24 +43,6 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > dynamo.pem
           chmod 600 dynamo.pem
 
-      - name: Upgrade Python on EC2
-        run: |
-          ssh -o StrictHostKeyChecking=no -i dynamo.pem ec2-user@$instance_ip << 'EOF'
-            sudo yum groupinstall -y "Development Tools"
-            sudo yum install -y gcc openssl-devel bzip2-devel libffi-devel wget make
-
-            cd /usr/src
-            sudo wget https://www.python.org/ftp/python/3.11.9/Python-3.11.9.tgz
-            sudo tar xzf Python-3.11.9.tgz
-            cd Python-3.11.9
-            sudo ./configure --enable-optimizations
-            sudo make altinstall
-
-            python3.11 --version
-          EOF
-        env:
-          instance_ip: ${{ env.instance_ip }}
-
       - name: Prepare Ansible Inventory
         run: |
           mkdir -p ansible
