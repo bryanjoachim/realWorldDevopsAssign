@@ -31,24 +31,16 @@ jobs:
       - name: Terraform Apply
         run: terraform apply -auto-approve
 
-      - name: Get Terraform Output (Public IP)
-        id: tf_output
+      - name: Get instance public IP
+        id: get_ip
+        run: echo "instance_ip=$(terraform output -raw instance_public_ip)" >> $GITHUB_ENV
+
+      - name: Create SSH key file
         run: |
-          echo "instance_public_ip=$(terraform output -raw instance_public_ip)" >> "$GITHUB_OUTPUT"
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > dynamo.pem
+          chmod 600 dynamo.pem
 
-      - name: Setup SSH Agent for Ansible
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Install Ansible
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip
-          pip3 install ansible
-
-
-      - name: Upgrade Python on EC2 (to >= 3.8)
+      - name: Upgrade Python on EC2
         run: |
           ssh -o StrictHostKeyChecking=no -i dynamo.pem ec2-user@$instance_ip << 'EOF'
             sudo yum groupinstall -y "Development Tools"
@@ -63,27 +55,23 @@ jobs:
 
             python3.11 --version
           EOF
-          env:
-            instance_ip: ${{ env.instance_ip }}
-      
+        env:
+          instance_ip: ${{ env.instance_ip }}
 
       - name: Prepare Ansible Inventory
         run: |
           mkdir -p ansible
-
-          EC2_PUBLIC_IP="${{ steps.tf_output.outputs.instance_public_ip }}"
-
-          if [ -z "$EC2_PUBLIC_IP" ]; then
-            echo "Error: EC2_PUBLIC_IP is empty. Check Terraform outputs and step ID."
-            exit 1
-          fi
-
           echo "[web]" > ansible/inventory.ini
-          echo "$EC2_PUBLIC_IP ansible_user=ec2-user ansible_python_interpreter=/usr/local/bin/python3.11" >> ansible/inventory.ini
-
-          echo "Generated ansible/inventory.ini content:"
+          echo "$instance_ip ansible_user=ec2-user" >> ansible/inventory.ini
           cat ansible/inventory.ini
-        shell: bash
+        env:
+          instance_ip: ${{ env.instance_ip }}
+
+      - name: Install Ansible
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install ansible
 
       - name: Run Ansible Playbook
         run: |
@@ -91,10 +79,8 @@ jobs:
         env:
           ANSIBLE_HOST_KEY_CHECKING: "False"
 
-      - name: Wait for 2 minutes before destroy
+      - name: Wait before destroy
         run: sleep 120
 
-      - name: Destroy Terraform Resources
+      - name: Destroy Terraform
         run: terraform destroy -auto-approve
-      
-          
