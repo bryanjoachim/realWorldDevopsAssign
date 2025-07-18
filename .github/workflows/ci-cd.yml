@@ -13,42 +13,45 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials # (If using AWS, for Terraform)
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1 # Or your chosen region
+          aws-region: us-east-1
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.5.0 # Or your preferred version
+          terraform_version: 1.5.0
 
       - name: Terraform Init
-        run: terraform init # Assuming your Terraform files are in a 'terraform' directory
+        run: terraform init
 
-      - name: Terraform Apply # Task 1: Provisioning Infrastructure
+      - name: Terraform Apply
         run: terraform apply -auto-approve
 
-      - name: Setup SSH Agent for Ansible # Crucial for SSH authentication
+      - name: Get Terraform Output (Public IP)
+        id: tf_output
+        run: |
+          echo "instance_public_ip=$(terraform output -raw instance_public_ip)" >> "$GITHUB_OUTPUT"
+
+      - name: Setup SSH Agent for Ansible
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Install Ansible # Task 2: Automating Configuration Management
+      - name: Install Ansible
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip
           pip3 install ansible
 
-
       - name: Prepare Ansible Inventory
         run: |
           mkdir -p ansible
 
-          # CHANGE THIS LINE: Reference 'instance_public_ip' as defined in your outputs.tf
-          EC2_PUBLIC_IP="${{ steps.terraform_apply_output.outputs.instance_public_ip }}"
+          EC2_PUBLIC_IP="${{ steps.tf_output.outputs.instance_public_ip }}"
 
           if [ -z "$EC2_PUBLIC_IP" ]; then
             echo "Error: EC2_PUBLIC_IP is empty. Check Terraform outputs and step ID."
@@ -60,11 +63,9 @@ jobs:
 
           echo "Generated ansible/inventory.ini content:"
           cat ansible/inventory.ini
-          shell: bash
+        shell: bash
 
-      
-
-      - name: Run Ansible Playbook # Task 2: Execute Playbook & Task 3: Continuous Deployment
+      - name: Run Ansible Playbook
         run: |
           ansible-playbook ansible/deploy.yml -i ansible/inventory.ini --user ubuntu
         env:
@@ -73,7 +74,7 @@ jobs:
       - name: Wait for 2 minutes before destroy
         run: sleep 120
 
-      - name: Destroy Terraform
+      - name: Destroy Terraform Resources
         run: terraform destroy -auto-approve
       
           
