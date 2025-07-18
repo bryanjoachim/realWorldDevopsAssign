@@ -92,9 +92,6 @@ resource "aws_instance" "web" {
     vpc_security_group_ids = [aws_security_group.web_sg.id]
     key_name = var.key_name
 
-    
-  }
-
     tags = {
       name = "Web server"
     }
