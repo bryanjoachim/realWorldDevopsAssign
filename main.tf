@@ -92,6 +92,16 @@ resource "aws_instance" "web" {
     vpc_security_group_ids = [aws_security_group.web_sg.id]
     key_name = var.key_name
 
+    user_data = <<-EOF
+              #!/bin/bash
+              sudo apt update -y
+              sudo apt install -y software-properties-common
+              sudo add-apt-repository -y ppa:deadsnakes/ppa
+              sudo apt update -y
+              sudo apt install -y python3.8 python3.8-venv python3.8-dev
+              sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1
+              EOF
+
     tags = {
       name = "Web server"
     }
