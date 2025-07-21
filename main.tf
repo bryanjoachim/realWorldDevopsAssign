@@ -93,6 +93,7 @@ resource "aws_instance" "web" {
     key_name = var.key_name
 
     user_data = <<-EOF
+              #cloud-boothook
               #!/bin/bash
               apt-get update -y
               apt-get install -y python3
