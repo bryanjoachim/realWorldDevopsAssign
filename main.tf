@@ -94,12 +94,18 @@ resource "aws_instance" "web" {
 
     user_data = <<-EOF
               #!/bin/bash
-              sudo apt update -y
-              sudo apt install -y software-properties-common
-              sudo add-apt-repository -y ppa:deadsnakes/ppa
-              sudo apt update -y
-              sudo apt install -y python3.8 python3.8-venv python3.8-dev
-              sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1
+              apt-get update -y
+              apt-get install -y python3
+
+              # Wait until Python is actually available
+              until command -v python3 >/dev/null 2>&1; do
+              echo "Waiting for Python to be installed..."
+              sleep 5
+              done
+
+              # Optional: create symlinks for Ansible
+              ln -s /usr/bin/python3 /usr/bin/python || true
+              ln -s /usr/bin/python3 /usr/bin/python3.8 || true
               EOF
 
     tags = {
