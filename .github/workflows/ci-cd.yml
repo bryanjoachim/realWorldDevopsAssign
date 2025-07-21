@@ -57,7 +57,7 @@ jobs:
         run: |
           mkdir -p ansible
           echo "[web]" > ansible/inventory.ini
-          echo "$instance_ip ansible_user=ec2-user" >> ansible/inventory.ini
+          echo "$instance_ip ansible_user=ec2-user ansible_python_interpreter=/usr/bin/python3.8" >> ansible/inventory.ini
           cat ansible/inventory.ini
         env:
           instance_ip: ${{ env.instance_ip }}
