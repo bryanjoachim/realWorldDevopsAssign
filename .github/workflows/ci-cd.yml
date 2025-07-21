@@ -68,11 +68,12 @@ jobs:
           sudo apt-get install -y python3-pip
           pip3 install ansible
 
+
       - name: Run Ansible Playbook
         run: |
-          ansible-playbook ansible/deploy.yml -i ansible/inventory.ini --user ec2-user
-        env:
-          ANSIBLE_HOST_KEY_CHECKING: "False"
+          ansible-playbook ansible/deploy.yml -i ansible/inventory.ini --private-key ./dynamo.pem
+
+      
 
       - name: Wait before destroy
         run: sleep 120
