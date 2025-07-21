@@ -39,17 +39,19 @@ jobs:
         run: echo "instance_ip=$(terraform output -raw instance_public_ip)" >> $GITHUB_ENV
 
 
+      - name: Create SSH key file
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > dynamo.pem
+          chmod 600 dynamo.pem
+
+
       - name: Test SSH connection
         run: |
           ssh -o StrictHostKeyChecking=no -i dynamo.pem ec2-user@$instance_ip 'echo SSH connection successful'
         env:
           instance_ip: ${{ env.instance_ip }}
 
-
-      - name: Create SSH key file
-        run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > dynamo.pem
-          chmod 600 dynamo.pem
+      
 
       - name: Prepare Ansible Inventory
         run: |
