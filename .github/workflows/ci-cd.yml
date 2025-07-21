@@ -47,7 +47,7 @@ jobs:
 
       - name: Test SSH connection
         run: |
-          ssh -o StrictHostKeyChecking=no -i dynamo.pem ec2-user@$instance_ip 'echo SSH connection successful'
+          ssh -o StrictHostKeyChecking=no -i dynamo.pem ubuntu@$instance_ip 'echo SSH connection successful'
         env:
           instance_ip: ${{ env.instance_ip }}
 
@@ -57,7 +57,7 @@ jobs:
         run: |
           mkdir -p ansible
           echo "[web]" > ansible/inventory.ini
-          echo "$instance_ip ansible_user=ec2-user ansible_python_interpreter=/usr/bin/python3.8" >> ansible/inventory.ini
+          echo "$instance_ip ansible_user=ubuntu ansible_python_interpreter=/usr/bin/python3.8" >> ansible/inventory.ini
           cat ansible/inventory.ini
         env:
           instance_ip: ${{ env.instance_ip }}
