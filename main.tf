@@ -138,3 +138,121 @@ resource "aws_db_subnet_group" "main" {
 }
 
 
+
+resource "aws_cloudwatch_metric_alarm" "high_cpu" {
+  alarm_name          = "HighCPUUtilization"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 70
+  alarm_description   = "This alarm triggers when CPU exceeds 70%."
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+  dimensions = {
+    InstanceId = aws_instance.web.id
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "status_check_failed" {
+  alarm_name          = "EC2StatusCheckFailed"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "StatusCheckFailed_Instance"
+  namespace           = "AWS/EC2"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 1
+  alarm_description   = "Triggers if instance status check fails."
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+  dimensions = {
+    InstanceId = aws_instance.web.id
+  }
+}
+
+resource "aws_sns_topic" "alerts" {
+  name = "alert-topic"
+}
+
+resource "aws_sns_topic_subscription" "email_alert" {
+  topic_arn = aws_sns_topic.alerts.arn
+  protocol  = "email"
+  endpoint  = "joachim.bryan1@gmail.com"
+}
+
+
+resource "aws_launch_template" "web_template" {
+  name_prefix   = "web-launch-template"
+  image_id      = var.ami_id
+  instance_type = "t2.micro"
+  key_name      = var.key_name
+
+  user_data = base64encode(<<-EOF
+    #!/bin/bash
+    apt update -y
+    apt install -y python3
+    ln -s /usr/bin/python3 /usr/bin/python3.8 || true
+  EOF
+  )
+
+  vpc_security_group_ids = [aws_security_group.web_sg.id]
+}
+
+resource "aws_autoscaling_group" "web_asg" {
+  desired_capacity     = 1
+  max_size             = 3
+  min_size             = 1
+  vpc_zone_identifier  = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+  launch_template {
+    id      = aws_launch_template.web_template.id
+    version = "$Latest"
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "web-asg-instance"
+    propagate_at_launch = true
+  }
+
+  health_check_type         = "EC2"
+  health_check_grace_period = 300
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_autoscaling_policy" "scale_out" {
+  name                   = "scale-out-policy"
+  autoscaling_group_name = aws_autoscaling_group.web_asg.name
+  scaling_adjustment     = 1
+  adjustment_type        = "ChangeInCapacity"
+  cooldown               = 300
+}
+
+resource "aws_cloudwatch_metric_alarm" "scale_out_alarm" {
+  alarm_name          = "scale-out-alarm"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = 60
+  statistic           = "Average"
+  threshold           = 60
+  alarm_actions       = [aws_autoscaling_policy.scale_out.arn]
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.web_asg.name
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
